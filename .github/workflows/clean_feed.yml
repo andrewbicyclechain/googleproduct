@@ -25,17 +25,23 @@ jobs:
         # 1. Setup paths
         $xmlUrl = "https://www.bicyclechain.co.uk/xml/199/products-advanced.xml"
         $xmlPath = "${{ github.workspace }}\largefile.xml"
-        $csvFull = "${{ github.workspace }}\google_feed_clean.csv"
-        $csvSimple = "${{ github.workspace }}\google_simple.csv"
+        $csvFull = "${{ github.workspace }}\prodsnodesc.csv"
+        $csvSimple = "${{ github.workspace }}\prods_simple.csv"
         
-        # 2. Handle download authentication safely
+        # 2. Force modern TLS protocols and masquerade as a normal browser
+        [ServicePointManager]::SecurityProtocol = [SecurityProtocolType]::Tls12 -bor [SecurityProtocolType]::Tls13
+        $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        
+        # 3. Handle download with human browser bypass headers
         try {
             $secPassword = ConvertTo-SecureString $env:PASS -AsPlainText -Force
             $credentials = New-Object System.Management.Automation.PSCredential($env:USER, $secPassword)
-            Write-Host "Downloading 200MB XML file..."
-            Invoke-WebRequest -Uri $xmlUrl -OutFile $xmlPath -Credential $credentials -ErrorAction Stop
+            
+            Write-Host "Downloading 200MB XML file using browser simulation..."
+            # Passing User-Agent tells the Apache server this is Chrome on Windows, avoiding firewall blocks
+            Invoke-WebRequest -Uri $xmlUrl -OutFile $xmlPath -Credential $credentials -UserAgent $userAgent -ErrorAction Stop
         } catch {
-            Write-Error "Download failed! Please check your FEED_USER, FEED_PASS, or URL. Error: $_"
+            Write-Error "Download failed! Firewall block or credentials wrong. Error Details: $_"
             exit 1
         }
         
@@ -45,16 +51,15 @@ jobs:
             exit 1
         }
 
-        # 3. Stream-load the large XML file safely
+        # 4. Stream-load the large XML file safely
         Write-Host "Streaming XML file to process data safely..."
         try {
             [xml]$xml = New-Object System.Xml.XmlDocument
-            # Using a stream reader prevents the machine from choking on huge files
             $reader = [System.IO.StreamReader]::new($xmlPath)
             $xml.Load($reader)
             $reader.Close()
         } catch {
-            Write-Error "Failed to parse XML layout. The file might contain malformed characters. Error: $_"
+            Write-Error "Failed to parse XML layout. Error: $_"
             exit 1
         }
 
@@ -62,10 +67,10 @@ jobs:
         if ($items.Count -eq 0) { $items = $xml.SelectNodes("//entry") }
         Write-Host "Found $($items.Count) products to process."
 
-        # The exact data columns you want inside Google Sheets
+        # The exact columns for Google Sheets
         $simpleColumns = @("id","title","link","mpn","gtin","availability","stock_level","product_type","current_price","regular_price","brand","size","color")
         
-        # 4. Generate arrays in a single safe pass
+        # 5. Generate arrays in a single pass
         $fullData = [System.Collections.Generic.List[PSCustomObject]]::new()
         $simpleData = [System.Collections.Generic.List[PSCustomObject]]::new()
         
@@ -83,7 +88,7 @@ jobs:
             
             # --- FILE 2: Simple Version ---
             $simpleObj = [ordered]@{}
-            foreach ($col in $simpleColumns) { $simpleObj[$col] = "" } # Seed blank layout first
+            foreach ($col in $simpleColumns) { $simpleObj[$col] = "" }
             foreach ($prop in $item.ChildNodes) {
                 if ($simpleColumns -contains $prop.LocalName) {
                     $simpleObj[$prop.LocalName] = $prop.InnerText.Trim()
@@ -92,7 +97,7 @@ jobs:
             $simpleData.Add([PSCustomObject]$simpleObj)
         }
         
-        # 5. Export both pristine CSV files
+        # 6. Export both CSV files
         Write-Host "Saving CSV files to disk..."
         $fullData | Export-Csv -Path $csvFull -NoTypeInformation -Encoding UTF8
         $simpleData | Export-Csv -Path $csvSimple -NoTypeInformation -Encoding UTF8
