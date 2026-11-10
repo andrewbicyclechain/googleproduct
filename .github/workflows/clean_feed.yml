@@ -5,6 +5,7 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch:
 
+# Grant the cloud runner permission to save the CSV file back into your repository
 permissions:
   contents: write
 
@@ -14,94 +15,51 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@main
+      uses: actions/checkout@v4.2.2
 
-    - name: Download XML and Generate Dual CSVs
+    - name: Download XML and Generate Clean CSV
       shell: powershell
       env:
-        COOKIE: ${{ secrets.FEED_COOKIE }}
+        USER: ${{ secrets.FEED_USER }}
+        PASS: ${{ secrets.FEED_PASS }}
       run: |
-        # 1. Setup paths
-        $xmlUrl = "https://www.bicyclechain.co.uk/xml/9/products-advanced.xml"
+        # 1. Prepare protected download file paths
+        $xmlUrl = "https://www.bicyclechain.co.uk/xml/199/products-advanced.xml"
         $xmlPath = "${{ github.workspace }}\largefile.xml"
-        $csvFull = "${{ github.workspace }}\prodsnodesc.csv"
-        $csvSimple = "${{ github.workspace }}\prods_simple.csv"
+        $csvPath = "${{ github.workspace }}\prodsnodesc.csv"
         
-        # 2. Modern connection settings & normal browser signature
-        [ServicePointManager]::SecurityProtocol = [SecurityProtocolType]::Tls12 -bor [SecurityProtocolType]::Tls13
-        $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        # 2. Build the network credentials securely using your secrets
+        $secPassword = ConvertTo-SecureString $env:PASS -AsPlainText -Force
+        $credentials = New-Object System.Management.Automation.PSCredential($env:USER, $secPassword)
         
-        # 3. Download using your active browser session cookie
-        try {
-            Write-Host "Downloading 200MB XML file using authenticated browser session..."
-            # Using -Headers to inject your cookie passes the request right through the firewall
-            Invoke-WebRequest -Uri $xmlUrl -OutFile $xmlPath -UserAgent $userAgent -Headers @{"Cookie"=$env:COOKIE} -ErrorAction Stop
-        } catch {
-            Write-Error "Download failed! Your session cookie may have expired or the URL is incorrect. Error: $_"
-            exit 1
-        }
+        Write-Host "Downloading authenticated 200MB XML file..."
+        Invoke-WebRequest -Uri $xmlUrl -OutFile $xmlPath -Credential $credentials
         
-        if (!(Test-Path $xmlPath) -or (Get-Item $xmlPath).Length -eq 0) {
-            Write-Error "Downloaded XML file is missing or completely empty."
-            exit 1
-        }
-
-        # 4. Stream-load the large XML file safely
-        Write-Host "Streaming XML file to process data safely..."
-        try {
-            [xml]$xml = New-Object System.Xml.XmlDocument
-            $reader = [System.IO.StreamReader]::new($xmlPath)
-            $xml.Load($reader)
-            $reader.Close()
-        } catch {
-            Write-Error "Failed to parse XML layout. Error: $_"
-            exit 1
-        }
-
+        # 3. Process data and completely clear descriptions
+        Write-Host "Processing data and stripping descriptions..."
+        [xml]$xml = Get-Content -Path $xmlPath
         $items = $xml.SelectNodes("//item")
         if ($items.Count -eq 0) { $items = $xml.SelectNodes("//entry") }
-        Write-Host "Found $($items.Count) products to process."
-
-        # Exact column layout for Google Sheets
-        $simpleColumns = @("id","title","link","mpn","gtin","availability","stock_level","product_type","current_price","regular_price","brand","size","color")
         
-        # 5. Generate data arrays
-        $fullData = [System.Collections.Generic.List[PSCustomObject]]::new()
-        $simpleData = [System.Collections.Generic.List[PSCustomObject]]::new()
-        
-        foreach ($item in $items) {
-            # --- FILE 1: Full Version ---
-            $fullObj = [ordered]@{}
+        $csvData = foreach ($item in $items) {
+            $productObj = [ordered]@{}
             foreach ($prop in $item.ChildNodes) {
                 if ($prop.LocalName -eq "description") {
-                    $fullObj["description"] = ""
-                } elseif ($prop.LocalName) {
-                    $fullObj[$prop.LocalName] = $prop.InnerText.Trim()
+                    $productObj["description"] = ""
+                } else {
+                    $productObj[$prop.LocalName] = $prop.InnerText.Trim()
                 }
             }
-            $fullData.Add([PSCustomObject]$fullObj)
-            
-            # --- FILE 2: Simple Version ---
-            $simpleObj = [ordered]@{}
-            foreach ($col in $simpleColumns) { $simpleObj[$col] = "" }
-            foreach ($prop in $item.ChildNodes) {
-                if ($simpleColumns -contains $prop.LocalName) {
-                    $simpleObj[$prop.LocalName] = $prop.InnerText.Trim()
-                }
-            }
-            $simpleData.Add([PSCustomObject]$simpleObj)
+            [PSCustomObject]$productObj
         }
         
-        # 6. Save both pristine CSV files
-        Write-Host "Saving CSV files to disk..."
-        $fullData | Export-Csv -Path $csvFull -NoTypeInformation -Encoding UTF8
-        $simpleData | Export-Csv -Path $csvSimple -NoTypeInformation -Encoding UTF8
-        Write-Host "Successfully generated both data files!"
+        $csvData | Export-Csv -Path $csvPath -NoTypeInformation -Encoding UTF8
+        Write-Host "CSV generated successfully!"
 
-    - name: Commit and Push clean CSVs back to GitHub
+    - name: Commit and Push clean CSV back to GitHub
       run: |
         git config --global user.name 'Feed Bot'
         git config --global user.email 'bot@github.com'
-        git add prodsnodesc.csv prods_simple.csv
-        git commit -m "Automated update of product feed CSVs" || exit 0
+        git add prodsnodesc.csv
+        git commit -m "Automated update of product feed CSV" || exit 0
         git push
