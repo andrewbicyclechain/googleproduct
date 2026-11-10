@@ -23,7 +23,7 @@ jobs:
         PASS: ${{ secrets.FEED_PASS }}
       run: |
         # 1. Setup paths
-        $xmlUrl = "https://www.bicyclechain.co.uk/xml/199/products-advanced.xml"
+        $xmlUrl = "https://www.bicyclechain.co.uk/xml/9/products-advanced.xml"
         $xmlPath = "${{ github.workspace }}\largefile.xml"
         $csvFull = "${{ github.workspace }}\prodsnodesc.csv"
         $csvSimple = "${{ github.workspace }}\prods_simple.csv"
