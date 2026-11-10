@@ -15,7 +15,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4.2.2
+      uses: actions/checkout@v4
 
     - name: Download XML and Generate Clean CSV
       shell: powershell
@@ -26,7 +26,7 @@ jobs:
         # 1. Prepare protected download file paths
         $xmlUrl = "https://www.bicyclechain.co.uk/xml/1/products-advanced.xml"
         $xmlPath = "${{ github.workspace }}\largefile.xml"
-        $csvPath = "${{ github.workspace }}\prodsnodesc2.csv"
+        $csvPath = "${{ github.workspace }}\prodsnodesc.csv"
         
         # 2. Build the network credentials securely using your secrets
         $secPassword = ConvertTo-SecureString $env:PASS -AsPlainText -Force
