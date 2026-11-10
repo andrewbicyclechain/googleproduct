@@ -5,7 +5,6 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch:
 
-# Grant the cloud runner permission to save the CSV file back into your repository
 permissions:
   contents: write
 
@@ -17,49 +16,71 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4.2.2
 
-    - name: Download XML and Generate Clean CSV
+    - name: Download XML and Generate Dual CSVs
       shell: powershell
       env:
         USER: ${{ secrets.FEED_USER }}
         PASS: ${{ secrets.FEED_PASS }}
       run: |
-        # 1. Prepare protected download file paths
+        # 1. Setup paths for both outputs
         $xmlUrl = "https://www.bicyclechain.co.uk/xml/199/products-advanced.xml"
         $xmlPath = "${{ github.workspace }}\largefile.xml"
-        $csvPath = "${{ github.workspace }}\google_feed_clean.csv"
+        $csvFull = "${{ github.workspace }}\google_feed_clean.csv"
+        $csvSimple = "${{ github.workspace }}\google_simple.csv"
         
-        # 2. Build the network credentials securely using your secrets
+        # 2. Authenticate and download
         $secPassword = ConvertTo-SecureString $env:PASS -AsPlainText -Force
         $credentials = New-Object System.Management.Automation.PSCredential($env:USER, $secPassword)
         
-        Write-Host "Downloading authenticated 200MB XML file..."
+        Write-Host "Downloading 200MB XML file..."
         Invoke-WebRequest -Uri $xmlUrl -OutFile $xmlPath -Credential $credentials
         
-        # 3. Process data and completely clear descriptions
-        Write-Host "Processing data and stripping descriptions..."
+        # 3. Load XML data
         [xml]$xml = Get-Content -Path $xmlPath
         $items = $xml.SelectNodes("//item")
         if ($items.Count -eq 0) { $items = $xml.SelectNodes("//entry") }
         
-        $csvData = foreach ($item in $items) {
-            $productObj = [ordered]@{}
+        # Exact column schema requested for Google Sheets
+        $simpleColumns = @("id","title","link","mpn","gtin","availability","stock_level","product_type","current_price","regular_price","brand","size","color")
+        
+        # 4. Generate arrays for both files in a single pass
+        Write-Host "Processing items..."
+        $fullData = [System.Collections.Generic.List[PSCustomObject]]::new()
+        $simpleData = [System.Collections.Generic.List[PSCustomObject]]::new()
+        
+        foreach ($item in $items) {
+            # --- FILE 1: Full Version (All columns, blank description) ---
+            $fullObj = [ordered]@{}
             foreach ($prop in $item.ChildNodes) {
                 if ($prop.LocalName -eq "description") {
-                    $productObj["description"] = ""
+                    $fullObj["description"] = ""
                 } else {
-                    $productObj[$prop.LocalName] = $prop.InnerText.Trim()
+                    $fullObj[$prop.LocalName] = $prop.InnerText.Trim()
                 }
             }
-            [PSCustomObject]$productObj
+            $fullData.Add([PSCustomObject]$fullObj)
+            
+            # --- FILE 2: Simple Version (Filtered schema) ---
+            $simpleObj = [ordered]@{}
+            foreach ($col in $simpleColumns) { $simpleObj[$col] = "" }
+            foreach ($prop in $item.ChildNodes) {
+                if ($simpleColumns -contains $prop.LocalName) {
+                    $simpleObj[$prop.LocalName] = $prop.InnerText.Trim()
+                }
+            }
+            $simpleData.Add([PSCustomObject]$simpleObj)
         }
         
-        $csvData | Export-Csv -Path $csvPath -NoTypeInformation -Encoding UTF8
-        Write-Host "CSV generated successfully!"
+        # 5. Export both files
+        Write-Host "Saving both CSV files..."
+        $fullData | Export-Csv -Path $csvFull -NoTypeInformation -Encoding UTF8
+        $simpleData | Export-Csv -Path $csvSimple -NoTypeInformation -Encoding UTF8
+        Write-Host "Successfully generated full and simple data files!"
 
-    - name: Commit and Push clean CSV back to GitHub
+    - name: Commit and Push clean CSVs back to GitHub
       run: |
         git config --global user.name 'Feed Bot'
         git config --global user.email 'bot@github.com'
-        git add prodsnodesc.csv
-        git commit -m "Automated update of product feed CSV" || exit 0
+        git add prodsnodesc.csv prods_simple.csv
+        git commit -m "Automated update of product feed CSVs" || exit 0
         git push
