@@ -24,9 +24,9 @@ jobs:
         PASS: ${{ secrets.FEED_PASS }}
       run: |
         # 1. Prepare protected download file paths
-        $xmlUrl = "https://www.bicyclechain.co.uk/xml/199/products-advanced.xml"
+        $xmlUrl = "https://www.bicyclechain.co.uk/xml/1/products-advanced.xml"
         $xmlPath = "${{ github.workspace }}\largefile.xml"
-        $csvPath = "${{ github.workspace }}\prodsnodesc.csv"
+        $csvPath = "${{ github.workspace }}\prodsnodesc2.csv"
         
         # 2. Build the network credentials securely using your secrets
         $secPassword = ConvertTo-SecureString $env:PASS -AsPlainText -Force
