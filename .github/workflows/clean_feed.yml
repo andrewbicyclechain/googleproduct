@@ -14,13 +14,12 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4.2.2
+      uses: actions/checkout@main
 
     - name: Download XML and Generate Dual CSVs
       shell: powershell
       env:
-        USER: ${{ secrets.FEED_USER }}
-        PASS: ${{ secrets.FEED_PASS }}
+        COOKIE: ${{ secrets.FEED_COOKIE }}
       run: |
         # 1. Setup paths
         $xmlUrl = "https://www.bicyclechain.co.uk/xml/9/products-advanced.xml"
@@ -28,24 +27,20 @@ jobs:
         $csvFull = "${{ github.workspace }}\prodsnodesc.csv"
         $csvSimple = "${{ github.workspace }}\prods_simple.csv"
         
-        # 2. Force modern TLS protocols and masquerade as a normal browser
+        # 2. Modern connection settings & normal browser signature
         [ServicePointManager]::SecurityProtocol = [SecurityProtocolType]::Tls12 -bor [SecurityProtocolType]::Tls13
         $userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         
-        # 3. Handle download with human browser bypass headers
+        # 3. Download using your active browser session cookie
         try {
-            $secPassword = ConvertTo-SecureString $env:PASS -AsPlainText -Force
-            $credentials = New-Object System.Management.Automation.PSCredential($env:USER, $secPassword)
-            
-            Write-Host "Downloading 200MB XML file using browser simulation..."
-            # Passing User-Agent tells the Apache server this is Chrome on Windows, avoiding firewall blocks
-            Invoke-WebRequest -Uri $xmlUrl -OutFile $xmlPath -Credential $credentials -UserAgent $userAgent -ErrorAction Stop
+            Write-Host "Downloading 200MB XML file using authenticated browser session..."
+            # Using -Headers to inject your cookie passes the request right through the firewall
+            Invoke-WebRequest -Uri $xmlUrl -OutFile $xmlPath -UserAgent $userAgent -Headers @{"Cookie"=$env:COOKIE} -ErrorAction Stop
         } catch {
-            Write-Error "Download failed! Firewall block or credentials wrong. Error Details: $_"
+            Write-Error "Download failed! Your session cookie may have expired or the URL is incorrect. Error: $_"
             exit 1
         }
         
-        # Verify file exists and is not empty
         if (!(Test-Path $xmlPath) -or (Get-Item $xmlPath).Length -eq 0) {
             Write-Error "Downloaded XML file is missing or completely empty."
             exit 1
@@ -67,10 +62,10 @@ jobs:
         if ($items.Count -eq 0) { $items = $xml.SelectNodes("//entry") }
         Write-Host "Found $($items.Count) products to process."
 
-        # The exact columns for Google Sheets
+        # Exact column layout for Google Sheets
         $simpleColumns = @("id","title","link","mpn","gtin","availability","stock_level","product_type","current_price","regular_price","brand","size","color")
         
-        # 5. Generate arrays in a single pass
+        # 5. Generate data arrays
         $fullData = [System.Collections.Generic.List[PSCustomObject]]::new()
         $simpleData = [System.Collections.Generic.List[PSCustomObject]]::new()
         
@@ -97,7 +92,7 @@ jobs:
             $simpleData.Add([PSCustomObject]$simpleObj)
         }
         
-        # 6. Export both CSV files
+        # 6. Save both pristine CSV files
         Write-Host "Saving CSV files to disk..."
         $fullData | Export-Csv -Path $csvFull -NoTypeInformation -Encoding UTF8
         $simpleData | Export-Csv -Path $csvSimple -NoTypeInformation -Encoding UTF8
