@@ -2,7 +2,7 @@ name: Scheduled Product Feed Sync
 
 on:
   schedule:
-    - cron: '0 2 * * *'
+    - cron: '0 3 * * *'
   workflow_dispatch:
 
 # Grant the cloud runner permission to save the CSV file back into your repository
