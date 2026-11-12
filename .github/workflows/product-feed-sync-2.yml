@@ -1,8 +1,8 @@
-name: Scheduled Product Feed Sync
+name: Scheduled Product Feed Sync 2
 
 on:
   schedule:
-    - cron: '0 3 * * *'
+    - cron: '30 2 * * *' # Offset by 30 mins so they don't run at the exact same second
   workflow_dispatch:
 
 # Grant the cloud runner permission to save the CSV file back into your repository
@@ -17,7 +17,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Download XML and Generate Clean CSV
+    - name: Download Second XML and Generate CSV
       shell: powershell
       env:
         USER: ${{ secrets.FEED_USER }}
@@ -25,14 +25,14 @@ jobs:
       run: |
         # 1. Prepare protected download file paths
         $xmlUrl = "https://www.bicyclechain.co.uk/xml/202/products-advanced.xml"
-        xmlPath="{{ github.workspace }}\largefile2.xml"
-        csvPath="{{ github.workspace }}\bc-product-feed.csv"
+        $xmlPath = "${{ github.workspace }}\largefile2.xml"
+        $csvPath = "${{ github.workspace }}\bc-product-feed.csv"
         
         # 2. Build the network credentials securely using your secrets
         $secPassword = ConvertTo-SecureString $env:PASS -AsPlainText -Force
-        credentials=New-ObjectSystem.Management.Automation.PSCredential(env:USER, $secPassword)
+        $credentials = New-Object System.Management.Automation.PSCredential($env:USER, $secPassword)
         
-        Write-Host "Downloading authenticated 200MB XML file..."
+        Write-Host "Downloading second authenticated XML file..."
         Invoke-WebRequest -Uri $xmlUrl -OutFile $xmlPath -Credential $credentials
         
         # 3. Process data and completely clear descriptions
@@ -41,13 +41,13 @@ jobs:
         $items = $xml.SelectNodes("//item")
         if ($items.Count -eq 0) { $items = $xml.SelectNodes("//entry") }
         
-        csvData=foreach(item in $items) {
+        $csvData = foreach ($item in $items) {
             $productObj = [ordered]@{}
             foreach ($prop in $item.ChildNodes) {
                 if ($prop.LocalName -eq "description") {
                     $productObj["description"] = ""
                 } else {
-                    productObj[prop.LocalName] = $prop.InnerText.Trim()
+                    $productObj[$prop.LocalName] = $prop.InnerText.Trim()
                 }
             }
             [PSCustomObject]$productObj
@@ -61,6 +61,5 @@ jobs:
         git config --global user.name 'Feed Bot'
         git config --global user.email 'bot@github.com'
         git add bc-product-feed.csv
-        git commit -m "Automated update of product feed CSV" || exit 0
+        git commit -m "Automated update of bc-product-feed.csv" || exit 0
         git push
-
