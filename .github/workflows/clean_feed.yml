@@ -26,7 +26,7 @@ jobs:
         # 1. Prepare protected download file paths
         $xmlUrl = "https://www.bicyclechain.co.uk/xml/11/products-advanced.xml"
         $xmlPath = "${{ github.workspace }}\largefile.xml"
-        $csvPath = "${{ github.workspace }}\prodsnodesc.csv"
+        $csvPath = "${{ github.workspace }}\bc-bikes-feed.csv"
         
         # 2. Build the network credentials securely using your secrets
         $secPassword = ConvertTo-SecureString $env:PASS -AsPlainText -Force
