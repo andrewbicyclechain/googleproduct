@@ -60,6 +60,6 @@ jobs:
       run: |
         git config --global user.name 'Feed Bot'
         git config --global user.email 'bot@github.com'
-        git add prodsnodesc.csv
+        git add bc-bikes-feed.csv
         git commit -m "Automated update of product feed CSV" || exit 0
         git push
