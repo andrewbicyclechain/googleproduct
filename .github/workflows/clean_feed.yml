@@ -5,7 +5,7 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch:
 
-# Grant the cloud runner permission to save the CSV file back into your repository
+# Grant the cloud runner permission to save the CSV files back into your repository
 permissions:
   contents: write
 
@@ -17,31 +17,30 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Download XML and Generate Clean CSV
+    - name: Download XMLs and Generate Clean CSVs
       shell: powershell
       env:
         USER: ${{ secrets.FEED_USER }}
         PASS: ${{ secrets.FEED_PASS }}
       run: |
-        # 1. Prepare protected download file paths
-        $xmlUrl = "https://www.bicyclechain.co.uk/xml/11/products-advanced.xml"
-        $xmlPath = "${{ github.workspace }}\largefile.xml"
-        $csvPath = "${{ github.workspace }}\bc-bikes-feed.csv"
-        
-        # 2. Build the network credentials securely using your secrets
+        # Build network credentials securely using your secrets
         $secPassword = ConvertTo-SecureString $env:PASS -AsPlainText -Force
         $credentials = New-Object System.Management.Automation.PSCredential($env:USER, $secPassword)
+
+        # --- FEED 1: bc-bikes-feed.csv ---
+        $xmlUrl1 = "https://www.bicyclechain.co.uk/xml/11/products-advanced.xml"
+        $xmlPath1 = "${{ github.workspace }}\largefile1.xml"
+        $csvPath1 = "${{ github.workspace }}\bc-bikes-feed.csv"
         
-        Write-Host "Downloading authenticated 200MB XML file..."
-        Invoke-WebRequest -Uri $xmlUrl -OutFile $xmlPath -Credential $credentials
+        Write-Host "Downloading first authenticated XML file..."
+        Invoke-WebRequest -Uri $xmlUrl1 -OutFile $xmlPath1 -Credential $credentials
         
-        # 3. Process data and completely clear descriptions
-        Write-Host "Processing data and stripping descriptions..."
-        [xml]$xml = Get-Content -Path $xmlPath
-        $items = $xml.SelectNodes("//item")
-        if ($items.Count -eq 0) { $items = $xml.SelectNodes("//entry") }
+        Write-Host "Processing first feed and stripping descriptions..."
+        [xml]$xml1 = Get-Content -Path $xmlPath1
+        $items1 = $xml1.SelectNodes("//item")
+        if ($items1.Count -eq 0) { $items1 = $xml1.SelectNodes("//entry") }
         
-        $csvData = foreach ($item in $items) {
+        $csvData1 = foreach ($item in $items1) {
             $productObj = [ordered]@{}
             foreach ($prop in $item.ChildNodes) {
                 if ($prop.LocalName -eq "description") {
@@ -52,14 +51,41 @@ jobs:
             }
             [PSCustomObject]$productObj
         }
-        
-        $csvData | Export-Csv -Path $csvPath -NoTypeInformation -Encoding UTF8
-        Write-Host "CSV generated successfully!"
+        $csvData1 | Export-Csv -Path $csvPath1 -NoTypeInformation -Encoding UTF8
 
-    - name: Commit and Push clean CSV back to GitHub
+        # --- FEED 2: bc-product-feed.csv ---
+        # Replace the URL below with your second XML file's link
+        $xmlUrl2 = "https://www.bicyclechain.co.uk/xml/202/products-advanced.xml"
+        $xmlPath2 = "${{ github.workspace }}\largefile2.xml"
+        $csvPath2 = "${{ github.workspace }}\bc-product-feed.csv"
+        
+        Write-Host "Downloading second authenticated XML file..."
+        Invoke-WebRequest -Uri $xmlUrl2 -OutFile $xmlPath2 -Credential $credentials
+        
+        Write-Host "Processing second feed and stripping descriptions..."
+        [xml]$xml2 = Get-Content -Path $xmlPath2
+        $items2 = $xml2.SelectNodes("//item")
+        if ($items2.Count -eq 0) { $items2 = $xml2.SelectNodes("//entry") }
+        
+        $csvData2 = foreach ($item in $items2) {
+            $productObj = [ordered]@{}
+            foreach ($prop in $item.ChildNodes) {
+                if ($prop.LocalName -eq "description") {
+                    $productObj["description"] = ""
+                } else {
+                    $productObj[$prop.LocalName] = $prop.InnerText.Trim()
+                }
+            }
+            [PSCustomObject]$productObj
+        }
+        $csvData2 | Export-Csv -Path $csvPath2 -NoTypeInformation -Encoding UTF8
+        
+        Write-Host "Both CSVs generated successfully!"
+
+    - name: Commit and Push clean CSVs back to GitHub
       run: |
         git config --global user.name 'Feed Bot'
         git config --global user.email 'bot@github.com'
-        git add bc-bikes-feed.csv
-        git commit -m "Automated update of product feed CSV" || exit 0
+        git add bc-bikes-feed.csv bc-product-feed.csv
+        git commit -m "Automated update of product feed CSVs" || exit 0
         git push
