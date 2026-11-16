@@ -17,25 +17,40 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download and merge CSV files
+      - name: Download, format, and merge CSV files
         env:
           FEED_USER: ${{ secrets.FEED_USER }}
           FEED_PASS: ${{ secrets.FEED_PASS }}
         run: |
           mkdir -p output
           
-          # Download using HTTP Basic Authentication (-f fails if credentials are wrong)
+          # Download using HTTP Basic Authentication
           curl -f -sS -u "$FEED_USER:$FEED_PASS" "https://www.bicyclechain.co.uk/csv/202/local-inventory.csv" -o file1.csv
           curl -f -sS -u "$FEED_USER:$FEED_PASS" "https://www.bicyclechain.co.uk/csv/11/local-inventory.csv" -o file2.csv
           
-          # Ensure file1 ends with a newline before appending file2
-          sed -i -e '$a\' file1.csv
-          
-          # Copy file1 (including headers) to the output file
-          cp file1.csv output/combined-inventory.csv
-          
-          # Append file2 while skipping its header row (line 1)
-          tail -n +2 file2.csv >> output/combined-inventory.csv
+          # Merge CSVs and append " GBP" to price and sale_price columns
+          python3 - << 'EOF'
+          import csv
+
+          files = ['file1.csv', 'file2.csv']
+          target_cols = ['price', 'sale_price']
+          output_path = 'output/combined-inventory.csv'
+
+          with open(output_path, 'w', newline='', encoding='utf-8') as out_f:
+              writer = None
+              for filename in files:
+                  with open(filename, 'r', newline='', encoding='utf-8-sig') as in_f:
+                      reader = csv.DictReader(in_f)
+                      if writer is None:
+                          writer = csv.DictWriter(out_f, fieldnames=reader.fieldnames)
+                          writer.writeheader()
+                      for row in reader:
+                          for col in target_cols:
+                              val = (row.get(col) or '').strip()
+                              if val and not val.endswith(' GBP'):
+                                  row[col] = f"{val} GBP"
+                          writer.writerow(row)
+          EOF
           
           # Clean up temporary files
           rm file1.csv file2.csv
