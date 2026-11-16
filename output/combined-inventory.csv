@@ -17279,9 +17279,9 @@ store_code,itemid,price,quantity,sale_price,availability
 "Taunton Bicycle Chain",102848405,3849.99,1,3479.99,in_stock
 "Taunton Bicycle Chain",96631205,7499.99,1,4299.00,in_stock
 "Taunton Bicycle Chain",102848430,2799.99,1,0.00,in_stock
-"Taunton Bicycle Chain",107800583,574.99,1,459.99,in_stock
-"Taunton Bicycle Chain",107800573,574.99,1,459.99,in_stock
-"Taunton Bicycle Chain",107800571,574.99,1,459.99,in_stock
+"Taunton Bicycle Chain",107800583,574.99,1,438.99,in_stock
+"Taunton Bicycle Chain",107800573,574.99,1,438.99,in_stock
+"Taunton Bicycle Chain",107800571,574.99,1,438.99,in_stock
 "Taunton Bicycle Chain",107800488,524.99,1,419.99,in_stock
 "Taunton Bicycle Chain",107800487,524.99,1,419.99,in_stock
 "Taunton Bicycle Chain",107800565,524.99,1,419.99,in_stock
@@ -17301,8 +17301,8 @@ store_code,itemid,price,quantity,sale_price,availability
 "Taunton Bicycle Chain",107800609,898.99,1,718.99,in_stock
 "Taunton Bicycle Chain",107800602,698.99,1,558.99,in_stock
 "Taunton Bicycle Chain",118917990,2494.99,1,0.00,in_stock
-"Taunton Bicycle Chain",107800587,574.99,1,459.99,in_stock
-"Taunton Bicycle Chain",107800582,574.99,1,459.99,in_stock
+"Taunton Bicycle Chain",107800587,574.99,1,438.99,in_stock
+"Taunton Bicycle Chain",107800582,574.99,1,438.99,in_stock
 "Taunton Bicycle Chain",107800591,698.99,1,558.99,in_stock
 "Taunton Bicycle Chain",107800503,698.99,1,558.99,in_stock
 "Taunton Bicycle Chain",107800499,574.99,1,459.99,in_stock
@@ -17535,7 +17535,7 @@ store_code,itemid,price,quantity,sale_price,availability
 "Bridgwater Bicycle Chain",102848405,3849.99,1,3479.99,in_stock
 "Bridgwater Bicycle Chain",98424464,1500.00,1,949.99,in_stock
 "Bridgwater Bicycle Chain",102848334,2799.99,1,0.00,in_stock
-"Bridgwater Bicycle Chain",107800579,574.99,1,459.99,in_stock
+"Bridgwater Bicycle Chain",107800579,574.99,1,438.99,in_stock
 "Bridgwater Bicycle Chain",107800566,524.99,1,419.99,in_stock
 "Bridgwater Bicycle Chain",107800559,524.99,1,419.99,in_stock
 "Bridgwater Bicycle Chain",107800493,574.99,1,459.99,in_stock
@@ -17750,7 +17750,7 @@ store_code,itemid,price,quantity,sale_price,availability
 "Weston-Super-Mare Bicycle Chain",82280674,698.99,1,648.99,in_stock
 "Weston-Super-Mare Bicycle Chain",102848377,3849.99,1,3479.99,in_stock
 "Weston-Super-Mare Bicycle Chain",98424463,1500.00,1,949.99,in_stock
-"Weston-Super-Mare Bicycle Chain",107800577,574.99,1,399.99,in_stock
+"Weston-Super-Mare Bicycle Chain",107800577,574.99,1,438.99,in_stock
 "Weston-Super-Mare Bicycle Chain",107800567,524.99,1,419.99,in_stock
 "Weston-Super-Mare Bicycle Chain",107800561,524.99,1,419.99,in_stock
 "Weston-Super-Mare Bicycle Chain",107800492,574.99,1,459.99,in_stock
@@ -17761,8 +17761,8 @@ store_code,itemid,price,quantity,sale_price,availability
 "Weston-Super-Mare Bicycle Chain",98424602,2749.99,1,2364.99,in_stock
 "Weston-Super-Mare Bicycle Chain",107800605,698.99,1,558.99,in_stock
 "Weston-Super-Mare Bicycle Chain",107800599,698.99,1,558.99,in_stock
-"Weston-Super-Mare Bicycle Chain",107800587,574.99,1,459.99,in_stock
-"Weston-Super-Mare Bicycle Chain",107800582,574.99,1,459.99,in_stock
+"Weston-Super-Mare Bicycle Chain",107800587,574.99,1,438.99,in_stock
+"Weston-Super-Mare Bicycle Chain",107800582,574.99,1,438.99,in_stock
 "Weston-Super-Mare Bicycle Chain",107800621,998.99,1,898.99,in_stock
 "Weston-Super-Mare Bicycle Chain",107800596,698.99,1,558.99,in_stock
 "Weston-Super-Mare Bicycle Chain",107800592,698.99,1,558.99,in_stock
@@ -18037,8 +18037,8 @@ store_code,itemid,price,quantity,sale_price,availability
 "Hereford Bicycle Chain",102848374,3849.99,1,3479.99,in_stock
 "Hereford Bicycle Chain",98424280,4999.00,1,3299.00,in_stock
 "Hereford Bicycle Chain",102848419,2799.99,1,0.00,in_stock
-"Hereford Bicycle Chain",107800580,574.99,1,459.99,in_stock
-"Hereford Bicycle Chain",107800579,574.99,1,459.99,in_stock
+"Hereford Bicycle Chain",107800580,574.99,1,438.99,in_stock
+"Hereford Bicycle Chain",107800579,574.99,1,438.99,in_stock
 "Hereford Bicycle Chain",107800487,524.99,1,419.99,in_stock
 "Hereford Bicycle Chain",107800560,524.99,1,419.99,in_stock
 "Hereford Bicycle Chain",102848408,3849.99,1,3479.99,in_stock
@@ -18260,8 +18260,8 @@ store_code,itemid,price,quantity,sale_price,availability
 "Yeovil Bicycle Chain",88901595,3049.99,1,0.00,in_stock
 "Yeovil Bicycle Chain",109811619,298.99,1,0.00,in_stock
 "Yeovil Bicycle Chain",98424281,4999.00,1,3299.00,in_stock
-"Yeovil Bicycle Chain",107800578,574.99,1,459.99,in_stock
-"Yeovil Bicycle Chain",107800573,574.99,1,459.99,in_stock
+"Yeovil Bicycle Chain",107800578,574.99,1,438.99,in_stock
+"Yeovil Bicycle Chain",107800573,574.99,1,438.99,in_stock
 "Yeovil Bicycle Chain",102848408,3849.99,1,3479.99,in_stock
 "Yeovil Bicycle Chain",102848342,3849.99,1,3479.99,in_stock
 "Yeovil Bicycle Chain",98424446,4999.00,1,3499.99,in_stock
@@ -18420,7 +18420,7 @@ store_code,itemid,price,quantity,sale_price,availability
 "Bristol Giant Brand Store",95209576,348.99,1,288.99,in_stock
 "Bristol Giant Brand Store",95209573,448.99,1,359.00,in_stock
 "Bristol Giant Brand Store",95209574,448.99,1,359.00,in_stock
-"Bristol Giant Brand Store",107800574,574.99,1,459.99,in_stock
+"Bristol Giant Brand Store",107800574,574.99,1,438.99,in_stock
 "Bristol Giant Brand Store",107800492,574.99,1,459.99,in_stock
 "Bristol Giant Brand Store",107800563,524.99,1,419.99,in_stock
 "Bristol Giant Brand Store",107800483,524.99,1,419.99,in_stock
@@ -18579,7 +18579,7 @@ store_code,itemid,price,quantity,sale_price,availability
 "Southampton Giant Brand Store",95209573,448.99,1,359.00,in_stock
 "Southampton Giant Brand Store",95209572,448.99,1,359.00,in_stock
 "Southampton Giant Brand Store",107800714,2698.99,1,1888.99,in_stock
-"Southampton Giant Brand Store",107800584,574.99,1,459.99,in_stock
+"Southampton Giant Brand Store",107800584,574.99,1,438.99,in_stock
 "Southampton Giant Brand Store",107800485,524.99,1,419.99,in_stock
 "Southampton Giant Brand Store",107800609,898.99,1,718.99,in_stock
 "Southampton Giant Brand Store",107800601,698.99,2,558.99,in_stock
