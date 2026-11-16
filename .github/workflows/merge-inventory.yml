@@ -28,36 +28,69 @@ jobs:
           curl -f -sS -u "$FEED_USER:$FEED_PASS" "https://www.bicyclechain.co.uk/csv/202/local-inventory.csv" -o file1.csv
           curl -f -sS -u "$FEED_USER:$FEED_PASS" "https://www.bicyclechain.co.uk/csv/11/local-inventory.csv" -o file2.csv
           
-          # Merge CSVs and append " GBP" to price and sale_price columns
+          # Merge CSVs and output both unmapped and mapped versions
           python3 - << 'EOF'
           import csv
 
           files = ['file1.csv', 'file2.csv']
-          target_cols = ['price', 'sale_price']
-          output_path = 'output/combined-inventory.csv'
+          price_cols = ['price', 'sale_price']
+          unmapped_path = 'output/combined-inventory.csv'
+          mapped_path = 'output/combined-inventory-mapped.csv'
 
-          with open(output_path, 'w', newline='', encoding='utf-8') as out_f:
-              writer = None
+          store_map = {
+              'taunton bicycle chain': 'TAUN1',
+              'bridgwater bicycle chain': 'BRID1',
+              'weston-super-mare bicycle chain': 'WEST1',
+              'hereford bicycle chain': 'HERE1',
+              'yeovil bicycle chain': 'YEO1',
+              'bristol giant brand store': 'BRIS1',
+              'southampton giant brand store': 'SOT2',
+              'southampton bicycle chain': 'SOT1',
+              'chichester bicycle chain': 'CHI1',
+          }
+
+          with open(unmapped_path, 'w', newline='', encoding='utf-8') as unmapped_f, \
+               open(mapped_path, 'w', newline='', encoding='utf-8') as mapped_f:
+              
+              unmapped_writer = None
+              mapped_writer = None
+
               for filename in files:
                   with open(filename, 'r', newline='', encoding='utf-8-sig') as in_f:
                       reader = csv.DictReader(in_f)
-                      if writer is None:
-                          writer = csv.DictWriter(out_f, fieldnames=reader.fieldnames)
-                          writer.writeheader()
+                      store_col = 'store_code' if 'store_code' in reader.fieldnames else reader.fieldnames[0]
+                      
+                      if unmapped_writer is None:
+                          unmapped_writer = csv.DictWriter(unmapped_f, fieldnames=reader.fieldnames)
+                          mapped_writer = csv.DictWriter(mapped_f, fieldnames=reader.fieldnames)
+                          unmapped_writer.writeheader()
+                          mapped_writer.writeheader()
+                          
                       for row in reader:
-                          for col in target_cols:
+                          # 1. Append " GBP" to price and sale_price (applies to both files)
+                          for col in price_cols:
                               val = (row.get(col) or '').strip()
                               if val and not val.endswith(' GBP'):
                                   row[col] = f"{val} GBP"
-                          writer.writerow(row)
+                          
+                          # Write the unmapped row first
+                          unmapped_writer.writerow(row)
+                          
+                          # 2. Replace store name in store_code for the mapped file
+                          raw_store = (row.get(store_col) or '').strip()
+                          if raw_store.lower() in store_map:
+                              row[store_col] = store_map[raw_store.lower()]
+                              
+                          # Write the mapped row
+                          mapped_writer.writerow(row)
           EOF
           
           # Clean up temporary files
           rm file1.csv file2.csv
 
-      - name: Commit and push combined CSV to repository
+      - name: Commit and push combined CSVs to repository
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add output/combined-inventory.csv
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update combined inventory CSV" && git push)
+          git add output/combined-inventory.csv output/combined-inventory-mapped.csv
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update combined inventory CSVs" && git push)
