@@ -2,7 +2,7 @@ name: Scheduled Product Feed Sync big
 
 on:
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '0 2 * * *'
   workflow_dispatch:
 
 # Grant the cloud runner permission to save the CSV file back into your repository
@@ -14,52 +14,49 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Download XML and Generate Clean CSV
-      shell: powershell
-      env:
-        USER: ${{ secrets.FEED_USER }}
-        PASS: ${{ secrets.FEED_PASS }}
-      run: |
-        # 1. Prepare protected download file paths
-        $xmlUrl = "http://82.71.89.70:3011/google/tjxomqEeiITnjqPKAJRHEhhOD0jqhbq3"
-        $xmlPath = "${{ github.workspace }}\largefile3.xml"
-        $csvPath = "${{ github.workspace }}\bc-big-feed.csv"
-        
-        # 2. Build the network credentials securely using your secrets
-        $secPassword = ConvertTo-SecureString $env:PASS -AsPlainText -Force
-        $credentials = New-Object System.Management.Automation.PSCredential($env:USER, $secPassword)
-        
-        Write-Host "Downloading authenticated 200MB XML file..."
-        Invoke-WebRequest -Uri $xmlUrl -OutFile $xmlPath -Credential $credentials
-        
-        # 3. Process data and completely clear descriptions
-        Write-Host "Processing data and stripping descriptions..."
-        [xml]$xml = Get-Content -Path $xmlPath
-        $items = $xml.SelectNodes("//item")
-        if ($items.Count -eq 0) { $items = $xml.SelectNodes("//entry") }
-        
-        $csvData = foreach ($item in $items) {
-            $productObj = [ordered]@{}
-            foreach ($prop in $item.ChildNodes) {
-                if ($prop.LocalName -eq "description") {
-                    $productObj["description"] = ""
-                } else {
-                    $productObj[$prop.LocalName] = $prop.InnerText.Trim()
-                }
-            }
-            [PSCustomObject]$productObj
-        }
-        
-        $csvData | Export-Csv -Path $csvPath -NoTypeInformation -Encoding UTF8
-        Write-Host "CSV generated successfully!"
+      - name: Download XML and Generate Clean CSV
+        shell: powershell
+        run: |
+          # 1. Prepare file paths and URL
+          $xmlUrl = "http://82.71.89.70:3011/google/tjxomqEeiITnjqPKAJRHEhhOD0jqhbq3"
+          $xmlPath = "${{ github.workspace }}\largefile.xml"
+          $csvPath = "${{ github.workspace }}\big-feed.csv"
+          
+          # 2. Download the XML file
+          Write-Host "Downloading XML file..."
+          Invoke-WebRequest -Uri $xmlUrl -OutFile $xmlPath
+          *Verification:* Test-Path $xmlPath
+          
+          # 3. Process data and completely clear descriptions
+          Write-Host "Processing data and stripping descriptions..."
+          [xml]$xml = Get-Content -Path $xmlPath
+          $items = $xml.SelectNodes("//item")
+          if ($items.Count -eq 0) { $items = $xml.SelectNodes("//entry") }
+          
+          $csvData = foreach ($item in $items) {
+              $productObj = [ordered]@{}
+              foreach ($prop in $item.ChildNodes) {
+                  if ($prop.LocalName -eq "description") {
+                      $productObj["description"] = ""
+                  } else {
+                      $productObj[$prop.LocalName] = $prop.InnerText.Trim()
+                  }
+              }
+              [PSCustomObject]$productObj
+          }
+          
+          $csvData | Export-Csv -Path $csvPath -NoTypeInformation -Encoding UTF8
+          Write-Host "CSV generated successfully!"
+          *Verification:* Test-Path $csvPath
 
-    - name: Commit and Push clean CSV back to GitHub
-      run: |
-        git config --global user.name 'Feed Bot'
-        git config --global user.email 'bot@github.com'
-        git add bc-bikes-feed.csv
-        git commit -m "Automated update of product feed CSV" || exit 0
-        git push
+      - name: Commit and Push clean CSV back to GitHub
+        run: |
+          git config --global user.name 'Feed Bot'
+          git config --global user.email 'bot@github.com'
+          git add big-feed.csv
+          git commit -m "Automated update of product feed CSV" || exit 0
+          git push
+          *Verification:* git status
