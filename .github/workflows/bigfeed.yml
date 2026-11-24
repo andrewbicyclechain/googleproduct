@@ -1,4 +1,4 @@
-name: Scheduled Product Feed Sync big
+name: Scheduled Product Feed Sync
 
 on:
   schedule:
@@ -28,7 +28,7 @@ jobs:
           # 2. Download the XML file
           Write-Host "Downloading XML file..."
           Invoke-WebRequest -Uri $xmlUrl -OutFile $xmlPath
-          *Verification:* Test-Path $xmlPath
+          # Verification: Test-Path $xmlPath
           
           # 3. Process data and completely clear descriptions
           Write-Host "Processing data and stripping descriptions..."
@@ -50,7 +50,7 @@ jobs:
           
           $csvData | Export-Csv -Path $csvPath -NoTypeInformation -Encoding UTF8
           Write-Host "CSV generated successfully!"
-          *Verification:* Test-Path $csvPath
+          # Verification: Test-Path $csvPath
 
       - name: Commit and Push clean CSV back to GitHub
         run: |
@@ -59,4 +59,4 @@ jobs:
           git add big-feed.csv
           git commit -m "Automated update of product feed CSV" || exit 0
           git push
-          *Verification:* git status
+          # Verification: git status
