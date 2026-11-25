@@ -1,4 +1,4 @@
-name: Scheduled Product Feed Sync
+name: Scheduled Product Feed Sync Full
 
 on:
   schedule:
@@ -28,10 +28,9 @@ jobs:
           # 2. Download the XML file
           Write-Host "Downloading XML file..."
           Invoke-WebRequest -Uri $xmlUrl -OutFile $xmlPath
-          # Verification: Test-Path $xmlPath
           
-          # 3. Process data and completely clear descriptions
-          Write-Host "Processing data and stripping descriptions..."
+          # 3. Process data and keep descriptions intact
+          Write-Host "Processing data..."
           [xml]$xml = Get-Content -Path $xmlPath
           $items = $xml.SelectNodes("//item")
           if ($items.Count -eq 0) { $items = $xml.SelectNodes("//entry") }
@@ -39,24 +38,18 @@ jobs:
           $csvData = foreach ($item in $items) {
               $productObj = [ordered]@{}
               foreach ($prop in $item.ChildNodes) {
-                  if ($prop.LocalName -eq "description") {
-                      $productObj["description"] = ""
-                  } else {
-                      $productObj[$prop.LocalName] = $prop.InnerText.Trim()
-                  }
+                  $productObj[$prop.LocalName] = $prop.InnerText.Trim()
               }
               [PSCustomObject]$productObj
           }
           
           $csvData | Export-Csv -Path $csvPath -NoTypeInformation -Encoding UTF8
           Write-Host "CSV generated successfully!"
-          # Verification: Test-Path $csvPath
 
       - name: Commit and Push clean CSV back to GitHub
         run: |
           git config --global user.name 'Feed Bot'
           git config --global user.email 'bot@github.com'
           git add big-feed.csv
-          git commit -m "Automated update of product feed CSV" || exit 0
+          git commit -m "Automated update of product feed CSV with descriptions" || exit 0
           git push
-          # Verification: git status
